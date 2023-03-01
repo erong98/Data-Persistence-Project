@@ -3,46 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using System.IO;
-using UnityEditor;
+using TMPro;
+//using UnityEditor;
 
 public class MainManager : MonoBehaviour
 {
-    public static MainManager Instance;
+    public Text ScoreText;
+    public GameObject GameOverText;
+    public Text HighScoreText;
 
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
-    public GameObject GameOverText;
-
-    public InputField PlayerNameText;
-    
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
-
-    public string playerName;
-    public string bestPlayer;
-    public int score;
-    public int bestScore;
-
-    private void Awake()
-    {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        //LoadScore();
-
-    }
 
     private void Start()
     {
@@ -60,6 +37,9 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        MenuUIHandler.Instance.LoadScore();
+        SetHighScore();
     }
 
     private void Update()
@@ -80,50 +60,25 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
+            if (m_Points > MenuUIHandler.Instance.bestScore)
+            {
+                MenuUIHandler.Instance.SaveScore(m_Points);
+            }
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                //MenuUIHandler.Instance.LoadScore();
+                //SetHighScore();
             }
         }
     }
 
-    [System.Serializable]
-    class SaveData
+    void SetHighScore()
     {
-        public string playerName;
-        public int score;
-        public int bestScore;
+        HighScoreText.text = "Best Score: " + MenuUIHandler.Instance.bestScore + " : Name: " + MenuUIHandler.Instance.bestPlayer;
     }
 
-    public void SaveScore()
-    {
-        SaveData data = new SaveData();
-        data.playerName = playerName;
-        data.bestScore = score;
-
-        string json = JsonUtility.ToJson(data);
-
-        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
-    }
-
-    public void LoadScore()
-    {
-        string path = Application.persistentDataPath + "/savefile.json";
-
-        if (File.Exists(path))
-        {
-            string json = File.ReadAllText(path);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
-
-            bestPlayer = data.playerName;
-            bestScore = data.bestScore;
-        }
-    }
-
-    public void GetName(string name)
-    {
-        playerName = name;
-    }
 
     void AddPoint(int point)
     {
@@ -135,13 +90,15 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
-        SaveScore();
+        //SaveScore();
     }
 
     public void StartGame()
     {
         //string name = GameObject.Find("Name Input").GetComponent<InputField>().text;
         //GetName(name);
+
+
 
     }
 
